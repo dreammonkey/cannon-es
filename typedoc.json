@@ -1,7 +1,5 @@
 {
-  "inputFiles": [
-    "./src/index.ts"
-  ],
+  "inputFiles": ["./src/index.ts"],
   "out": "docs/",
   "mode": "library",
   "theme": "minimal",
