@@ -6718,7 +6718,7 @@ class RaycastVehicle {
     this.chassisBody = options.chassisBody;
     this.wheelInfos = [];
     this.sliding = false;
-    this.world = null;
+    this._world = null;
     this.indexRightAxis = typeof options.indexRightAxis !== 'undefined' ? options.indexRightAxis : 1;
     this.indexForwardAxis = typeof options.indexForwardAxis !== 'undefined' ? options.indexForwardAxis : 0;
     this.indexUpAxis = typeof options.indexUpAxis !== 'undefined' ? options.indexUpAxis : 2;
@@ -6727,6 +6727,14 @@ class RaycastVehicle {
     this.preStepCallback = () => {};
 
     this.currentVehicleSpeedKmHour = 0;
+  }
+
+  set world(world) {
+    this._world = world;
+  }
+
+  get world() {
+    return this._world;
   }
   /**
    * Add a wheel. For information about the options, see WheelInfo.
@@ -6792,7 +6800,7 @@ class RaycastVehicle {
     };
 
     world.addEventListener('preStep', this.preStepCallback);
-    this.world = world;
+    this._world = world;
   }
   /**
    * Get one of the wheel axles, world-oriented.
@@ -6940,7 +6948,7 @@ class RaycastVehicle {
     const constraints = this.constraints;
     world.removeBody(this.chassisBody);
     world.removeEventListener('preStep', this.preStepCallback);
-    this.world = null;
+    this._world = null;
   }
 
   castRay(wheel) {
@@ -6959,7 +6967,9 @@ class RaycastVehicle {
     const oldState = chassisBody.collisionResponse;
     chassisBody.collisionResponse = false; // Cast ray against world
 
-    this.world.rayTest(source, target, raycastResult);
+    this._world.rayTest(source, target, raycastResult); // this._world!.raycastClosest(source, target, { skipBackfaces: true }, raycastResult)
+
+
     chassisBody.collisionResponse = oldState;
     const object = raycastResult.body;
     wheel.raycastResult.groundObject = 0;
@@ -9123,7 +9133,7 @@ class Trimesh extends Shape {
         const n = this.vertices.length / 3,
             verts = this.vertices;
         const minx,miny,minz,maxx,maxy,maxz;
-          const v = tempWorldVertex;
+         const v = tempWorldVertex;
         for(let i=0; i<n; i++){
             this.getVertex(i, v);
             quat.vmult(v, v);
@@ -9133,12 +9143,12 @@ class Trimesh extends Shape {
             } else if(v.x > maxx || maxx===undefined){
                 maxx = v.x;
             }
-              if (v.y < miny || miny===undefined){
+             if (v.y < miny || miny===undefined){
                 miny = v.y;
             } else if(v.y > maxy || maxy===undefined){
                 maxy = v.y;
             }
-              if (v.z < minz || minz===undefined){
+             if (v.z < minz || minz===undefined){
                 minz = v.z;
             } else if(v.z > maxz || maxz===undefined){
                 maxz = v.z;
