@@ -29,7 +29,7 @@ export class RaycastVehicle {
   chassisBody: Body
   wheelInfos: WheelInfo[]
   sliding: boolean // Will be set to true if the car is sliding.
-  world: World | null
+  _world: World | null
   indexRightAxis: number // Index of the right axis, 0=x, 1=y, 2=z
   indexForwardAxis: number // Index of the forward axis, 0=x, 1=y, 2=z
   indexUpAxis: number // Index of the up axis, 0=x, 1=y, 2=z
@@ -41,13 +41,21 @@ export class RaycastVehicle {
     this.chassisBody = options.chassisBody
     this.wheelInfos = []
     this.sliding = false
-    this.world = null
+    this._world = null
     this.indexRightAxis = typeof options.indexRightAxis !== 'undefined' ? options.indexRightAxis : 1
     this.indexForwardAxis = typeof options.indexForwardAxis !== 'undefined' ? options.indexForwardAxis : 0
     this.indexUpAxis = typeof options.indexUpAxis !== 'undefined' ? options.indexUpAxis : 2
     this.constraints = []
     this.preStepCallback = () => {}
     this.currentVehicleSpeedKmHour = 0
+  }
+
+  set world(world: World | null) {
+    this._world = world
+  }
+
+  get world(): World | null {
+    return this._world
   }
 
   /**
@@ -107,7 +115,7 @@ export class RaycastVehicle {
       that.updateVehicle(world.dt)
     }
     world.addEventListener('preStep', this.preStepCallback)
-    this.world = world
+    this._world = world
   }
 
   /**
@@ -255,7 +263,7 @@ export class RaycastVehicle {
     const constraints = this.constraints
     world.removeBody(this.chassisBody)
     world.removeEventListener('preStep', this.preStepCallback)
-    this.world = null
+    this._world = null
   }
 
   castRay(wheel: WheelInfo): number {
@@ -282,7 +290,8 @@ export class RaycastVehicle {
     chassisBody.collisionResponse = false
 
     // Cast ray against world
-    this.world!.rayTest(source, target, raycastResult)
+    this._world!.rayTest(source, target, raycastResult)
+    // this._world!.raycastClosest(source, target, { skipBackfaces: true }, raycastResult)
     chassisBody.collisionResponse = oldState
 
     const object = raycastResult.body
