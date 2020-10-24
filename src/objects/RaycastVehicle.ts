@@ -290,8 +290,8 @@ export class RaycastVehicle {
     chassisBody.collisionResponse = false
 
     // Cast ray against world
-    this._world!.rayTest(source, target, raycastResult)
-    // this._world!.raycastClosest(source, target, { skipBackfaces: true }, raycastResult)
+    // this._world!.rayTest(source, target, raycastResult)
+    this._world!.raycastClosest(source, target, { skipBackfaces: true }, raycastResult)
     chassisBody.collisionResponse = oldState
 
     const object = raycastResult.body

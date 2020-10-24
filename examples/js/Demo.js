@@ -485,7 +485,7 @@ var Demo = function (options) {
     document.body.appendChild(container)
 
     // Camera
-    camera = new THREE.PerspectiveCamera(24, SCREEN_WIDTH / SCREEN_HEIGHT, NEAR, FAR)
+    camera = that.camera = new THREE.PerspectiveCamera(24, SCREEN_WIDTH / SCREEN_HEIGHT, NEAR, FAR)
 
     camera.up.set(0, 0, 1)
     camera.position.set(0, 30, 20)
@@ -974,6 +974,10 @@ Demo.prototype.setGlobalSpookParams = function (k, d, h) {
 
 Demo.prototype.getWorld = function () {
   return this.world
+}
+
+Demo.prototype.getCamera = function () {
+  return this.camera
 }
 
 Demo.prototype.addVisual = function (body) {

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>cannon.js - RaycastVehicle (Z-up)</title>
+    <title>cannon.js - RaycastVehicle (Y-up)</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="css/style.css" type="text/css" />
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
@@ -9,7 +9,7 @@
   <body>
     <script type="module">
       import * as CANNON from '../dist/cannon-es.js'
-      // import * as THREE from 'https://unpkg.com/three@0.115.0/build/three.module.js'
+      //   import * as THREE from 'https://unpkg.com/three@0.115.0/build/three.module.js'
       import { Demo } from './js/Demo.js'
 
       var demo = new Demo()
@@ -19,11 +19,15 @@
       demo.addScene('car', function () {
         var world = demo.getWorld()
         world.broadphase = new CANNON.SAPBroadphase(world)
-        world.gravity.set(0, 0, -10)
+        world.gravity.set(0, -10, 0)
         world.defaultContactMaterial.friction = 0
 
         // var axesHelper = new THREE.AxesHelper( 5 )
         // demo.scene.add( axesHelper )
+
+        var camera = demo.getCamera()
+        camera.up.set(0, 1, 0)
+        camera.position.set(0, 20, 30)
 
         var groundMaterial = new CANNON.Material('groundMaterial')
         var wheelMaterial = new CANNON.Material('wheelMaterial')
@@ -40,17 +44,17 @@
         // We must add the contact materials to the world
         world.addContactMaterial(wheelGroundContactMaterial)
 
-        var chassisShape
-        chassisShape = new CANNON.Box(new CANNON.Vec3(2, 1, 0.5))
+        var chassisShape // [width, height, length]
+        chassisShape = new CANNON.Box(new CANNON.Vec3(1, 0.5, 2))
         var chassisBody = new CANNON.Body({ mass: mass })
         chassisBody.addShape(chassisShape)
-        chassisBody.position.set(0, 0, 4)
-        chassisBody.angularVelocity.set(0, 0, 0.5)
+        chassisBody.position.set(0, 4, 0)
+        chassisBody.angularVelocity.set(0, 0.5, 0)
         demo.addVisual(chassisBody)
 
         var options = {
           radius: 0.5,
-          directionLocal: new CANNON.Vec3(0, 0, -1), // Match World gravity (negative Z)
+          directionLocal: new CANNON.Vec3(0, -1, 0), // Match World gravity (negative Y)
           suspensionStiffness: 30,
           suspensionRestLength: 0.3,
           frictionSlip: 5,
@@ -58,8 +62,8 @@
           dampingCompression: 4.4,
           maxSuspensionForce: 100000,
           rollInfluence: 0.01,
-          axleLocal: new CANNON.Vec3(0, 1, 0), // wheel rotates around Y-axis
-          chassisConnectionPointLocal: new CANNON.Vec3(1, 1, 0),
+          axleLocal: new CANNON.Vec3(1, 0, 0), // wheel rotates around X-axis
+          chassisConnectionPointLocal: new CANNON.Vec3(1, 0, 1),
           maxSuspensionTravel: 0.3,
           customSlidingRotationalSpeed: -30,
           useCustomSlidingRotationalSpeed: true,
@@ -68,25 +72,31 @@
         // Create the vehicle
         vehicle = new CANNON.RaycastVehicle({
           chassisBody: chassisBody,
-          indexForwardAxis: 0, // x-axis
-          indexRightAxis: 1, // y-axis
-          indexUpAxis: 2, // z-axis
+          indexForwardAxis: 2, // z-axis
+          indexRightAxis: 0, // x-axis
+          indexUpAxis: 1, // y-axis
         })
 
-        // FrontLeft [X,-Y,Z]
-        options.chassisConnectionPointLocal.set(1, -1, 0)
+        var chassisWidth = 2
+        var chassisHeight = 0
+        var chassisFront = 1
+        var chassisBack = -1
+        console.log(chassisWidth)
+
+        // FrontLeft [-X,Y,Z]
+        options.chassisConnectionPointLocal.set(-chassisWidth / 2, chassisHeight, chassisFront)
         vehicle.addWheel(options)
 
         // FrontRight [X,Y,Z]
-        options.chassisConnectionPointLocal.set(1, 1, 0)
+        options.chassisConnectionPointLocal.set(chassisWidth / 2, chassisHeight, chassisFront)
         vehicle.addWheel(options)
 
-        // BackLeft [-X,-Y,Z]
-        options.chassisConnectionPointLocal.set(-1, -1, 0)
+        // BackLeft [-X,Y,-Z]
+        options.chassisConnectionPointLocal.set(-chassisWidth / 2, chassisHeight, chassisBack)
         vehicle.addWheel(options)
 
-        // BackRight [-X,Y,Z]
-        options.chassisConnectionPointLocal.set(-1, 1, 0)
+        // BackRight [X,Y,-Z]
+        options.chassisConnectionPointLocal.set(chassisWidth / 2, chassisHeight, chassisBack)
         vehicle.addWheel(options)
 
         vehicle.addToWorld(world)
@@ -101,7 +111,8 @@
           wheelBody.type = CANNON.Body.KINEMATIC
           wheelBody.collisionFilterGroup = 0 // turn off collisions
           var q = new CANNON.Quaternion()
-          q.setFromEuler(0, 0, 0) // no shape rotation needed
+          // rotate shape 90° around Z-axis
+          q.setFromEuler(0, 0, Math.PI / 2)
           wheelBody.addShape(cylinderShape, new CANNON.Vec3(), q)
           wheelBodies.push(wheelBody)
           demo.addVisual(wheelBody)
@@ -121,13 +132,13 @@
 
         var matrix = []
         var sizeX = 64,
-          sizeY = 64
+          sizeZ = 64
 
         for (var i = 0; i < sizeX; i++) {
           matrix.push([])
-          for (var j = 0; j < sizeY; j++) {
-            var height = Math.cos((i / sizeX) * Math.PI * 5) * Math.cos((j / sizeY) * Math.PI * 5) * 2 + 2
-            if (i === 0 || i === sizeX - 1 || j === 0 || j === sizeY - 1) height = 3
+          for (var j = 0; j < sizeZ; j++) {
+            var height = Math.cos((i / sizeX) * Math.PI * 5) * Math.cos((j / sizeZ) * Math.PI * 5) * 2 + 2
+            if (i === 0 || i === sizeX - 1 || j === 0 || j === sizeZ - 1) height = 3
             matrix[i].push(height)
           }
         }
@@ -137,7 +148,9 @@
         })
         var hfBody = new CANNON.Body({ mass: 0 })
         hfBody.addShape(hfShape)
-        hfBody.position.set((-sizeX * hfShape.elementSize) / 2, (-sizeY * hfShape.elementSize) / 2, -1)
+
+        hfBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0)
+        hfBody.position.set((-sizeX * hfShape.elementSize) / 2, -1, (sizeZ * hfShape.elementSize) / 2)
         world.addBody(hfBody)
         demo.addVisual(hfBody)
       })
