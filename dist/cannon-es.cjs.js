@@ -6601,6 +6601,8 @@ class WheelInfo {
   // Speed to apply to the wheel rotation when the wheel is sliding.
   // If the customSlidingRotationalSpeed should be used.
   // Connection point, defined locally in the chassis body frame.
+  // The local direction of the vehicle (same as World gravity)
+  // The local axle around which the wheel should rotate.
   // Rotation value, in radians.
   // The result from raycasting.
   // Wheel world transform.
@@ -6970,9 +6972,11 @@ class RaycastVehicle {
 
     const oldState = chassisBody.collisionResponse;
     chassisBody.collisionResponse = false; // Cast ray against world
+    // this._world!.rayTest(source, target, raycastResult)
 
-    this._world.rayTest(source, target, raycastResult); // this._world!.raycastClosest(source, target, { skipBackfaces: true }, raycastResult)
-
+    this._world.raycastClosest(source, target, {
+      skipBackfaces: true
+    }, raycastResult);
 
     chassisBody.collisionResponse = oldState;
     const object = raycastResult.body;

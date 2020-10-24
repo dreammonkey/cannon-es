@@ -82,9 +82,9 @@ export class WheelInfo {
   sliding: boolean
   chassisConnectionPointLocal: Vec3 // Connection point, defined locally in the chassis body frame.
   chassisConnectionPointWorld: Vec3
-  directionLocal: Vec3
+  directionLocal: Vec3 // The local direction of the vehicle (same as World gravity)
   directionWorld: Vec3
-  axleLocal: Vec3
+  axleLocal: Vec3 // The local axle around which the wheel should rotate.
   axleWorld: Vec3
   suspensionRestLength: number
   suspensionMaxLength: number

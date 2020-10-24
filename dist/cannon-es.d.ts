@@ -1395,7 +1395,7 @@ declare module "objects/RaycastVehicle" {
         chassisBody: Body;
         wheelInfos: WheelInfo[];
         sliding: boolean;
-        world: World | null;
+        _world: World | null;
         indexRightAxis: number;
         indexForwardAxis: number;
         indexUpAxis: number;
@@ -1403,6 +1403,8 @@ declare module "objects/RaycastVehicle" {
         preStepCallback: () => void;
         currentVehicleSpeedKmHour: number;
         constructor(options: RaycastVehicleOptions);
+        set world(world: World | null);
+        get world(): World | null;
         addWheel(options?: WheelInfoOptions): number;
         setSteeringValue(value: number, wheelIndex: number): void;
         applyEngineForce(value: number, wheelIndex: number): void;
