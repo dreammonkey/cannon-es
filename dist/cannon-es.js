@@ -6728,7 +6728,15 @@ class RaycastVehicle {
 
     this.preStepCallback = () => {};
 
-    this.currentVehicleSpeedKmHour = 0;
+    this.currentVehicleSpeedKmHour = 0; // reuse Vec3
+
+    this._chassis_velocity_at_contactPoint = new Vec3();
+    this._forwardWorld = new Vec3();
+    this._updateVehicle_impulse = new Vec3();
+    this._updateVehicle_relpos = new Vec3();
+    this._updateVehicle_fwd = new Vec3();
+    this._updateVehicle_vel = new Vec3();
+    this._updateFriction_rel_pos = new Vec3();
   }
 
   set world(world) {
@@ -6827,11 +6835,11 @@ class RaycastVehicle {
       this.updateWheelTransform(i);
     }
 
-    this.currentVehicleSpeedKmHour = 3.6 * chassisBody.velocity.length();
-    const forwardWorld = new Vec3();
-    this.getVehicleAxisWorld(this.indexForwardAxis, forwardWorld);
+    this.currentVehicleSpeedKmHour = 3.6 * chassisBody.velocity.length(); // const forwardWorld = new Vec3() // reuse Vec3
 
-    if (forwardWorld.dot(chassisBody.velocity) < 0) {
+    this.getVehicleAxisWorld(this.indexForwardAxis, this._forwardWorld);
+
+    if (this._forwardWorld.dot(chassisBody.velocity) < 0) {
       this.currentVehicleSpeedKmHour *= -1;
     } // simulate suspension
 
@@ -6840,9 +6848,8 @@ class RaycastVehicle {
       this.castRay(wheelInfos[i]);
     }
 
-    this.updateSuspension(timeStep);
-    const impulse = new Vec3();
-    const relpos = new Vec3();
+    this.updateSuspension(timeStep); // const impulse = new Vec3() // reuse Vec3
+    // const relpos = new Vec3() // reuse Vec3
 
     for (let i = 0; i < numWheels; i++) {
       //apply suspension force
@@ -6853,21 +6860,20 @@ class RaycastVehicle {
         suspensionForce = wheel.maxSuspensionForce;
       }
 
-      wheel.raycastResult.hitNormalWorld.scale(suspensionForce * timeStep, impulse);
-      wheel.raycastResult.hitPointWorld.vsub(chassisBody.position, relpos);
-      chassisBody.applyImpulse(impulse, relpos);
+      wheel.raycastResult.hitNormalWorld.scale(suspensionForce * timeStep, this._updateVehicle_impulse);
+      wheel.raycastResult.hitPointWorld.vsub(chassisBody.position, this._updateVehicle_relpos);
+      chassisBody.applyImpulse(this._updateVehicle_impulse, this._updateVehicle_relpos);
     }
 
     this.updateFriction(timeStep);
-    const hitNormalWorldScaledWithProj = new Vec3();
-    const fwd = new Vec3();
-    const vel = new Vec3();
+    const hitNormalWorldScaledWithProj = new Vec3(); // const fwd = new Vec3() // reuse Vec3
+    // const vel = new Vec3() // reuse Vec3
 
     for (let i = 0; i < numWheels; i++) {
       const wheel = wheelInfos[i]; //const relpos = new Vec3();
       //wheel.chassisConnectionPointWorld.vsub(chassisBody.position, relpos);
 
-      chassisBody.getVelocityAtWorldPoint(wheel.chassisConnectionPointWorld, vel); // Hack to get the rotation in the correct direction
+      chassisBody.getVelocityAtWorldPoint(wheel.chassisConnectionPointWorld, this._updateVehicle_vel); // Hack to get the rotation in the correct direction
 
       let m = 1;
 
@@ -6878,11 +6884,16 @@ class RaycastVehicle {
       }
 
       if (wheel.isInContact) {
-        this.getVehicleAxisWorld(this.indexForwardAxis, fwd);
-        const proj = fwd.dot(wheel.raycastResult.hitNormalWorld);
+        this.getVehicleAxisWorld(this.indexForwardAxis, this._updateVehicle_fwd);
+
+        const proj = this._updateVehicle_fwd.dot(wheel.raycastResult.hitNormalWorld);
+
         wheel.raycastResult.hitNormalWorld.scale(proj, hitNormalWorldScaledWithProj);
-        fwd.vsub(hitNormalWorldScaledWithProj, fwd);
-        const proj2 = fwd.dot(vel);
+
+        this._updateVehicle_fwd.vsub(hitNormalWorldScaledWithProj, this._updateVehicle_fwd);
+
+        const proj2 = this._updateVehicle_fwd.dot(this._updateVehicle_vel);
+
         wheel.deltaRotation = m * proj2 * timeStep / wheel.radius;
       }
 
@@ -6997,10 +7008,10 @@ class RaycastVehicle {
         wheel.raycastResult.reset();
       }
 
-      const denominator = wheel.raycastResult.hitNormalWorld.dot(wheel.directionWorld);
-      const chassis_velocity_at_contactPoint = new Vec3();
-      chassisBody.getVelocityAtWorldPoint(wheel.raycastResult.hitPointWorld, chassis_velocity_at_contactPoint);
-      const projVel = wheel.raycastResult.hitNormalWorld.dot(chassis_velocity_at_contactPoint);
+      const denominator = wheel.raycastResult.hitNormalWorld.dot(wheel.directionWorld); // const chassis_velocity_at_contactPoint = new Vec3() // reuse Vec3
+
+      chassisBody.getVelocityAtWorldPoint(wheel.raycastResult.hitPointWorld, this._chassis_velocity_at_contactPoint);
+      const projVel = wheel.raycastResult.hitNormalWorld.dot(this._chassis_velocity_at_contactPoint);
 
       if (denominator >= -0.1) {
         wheel.suspensionRelativeVelocity = 0;
@@ -7184,15 +7195,15 @@ class RaycastVehicle {
 
 
     for (let i = 0; i < numWheels; i++) {
-      const wheel = wheelInfos[i];
-      const rel_pos = new Vec3();
-      wheel.raycastResult.hitPointWorld.vsub(chassisBody.position, rel_pos); // cannons applyimpulse is using world coord for the position
-      //rel_pos.copy(wheel.raycastResult.hitPointWorld);
+      const wheel = wheelInfos[i]; // const rel_pos = new Vec3() // reuse Vec3
+
+      wheel.raycastResult.hitPointWorld.vsub(chassisBody.position, this._updateFriction_rel_pos); // cannons applyimpulse is using world coord for the position
+      //this._updateFriction_rel_pos.copy(wheel.raycastResult.hitPointWorld);
 
       if (wheel.forwardImpulse !== 0) {
         const impulse = new Vec3();
         forwardWS[i].scale(wheel.forwardImpulse, impulse);
-        chassisBody.applyImpulse(impulse, rel_pos);
+        chassisBody.applyImpulse(impulse, this._updateFriction_rel_pos);
       }
 
       if (wheel.sideImpulse !== 0) {
@@ -7204,10 +7215,10 @@ class RaycastVehicle {
         axle[i].scale(wheel.sideImpulse, sideImp); // Scale the relative position in the up direction with rollInfluence.
         // If rollInfluence is 1, the impulse will be applied on the hitPoint (easy to roll over), if it is zero it will be applied in the same plane as the center of mass (not easy to roll over).
 
-        chassisBody.vectorToLocalFrame(rel_pos, rel_pos);
-        rel_pos['xyz'[this.indexUpAxis]] *= wheel.rollInfluence;
-        chassisBody.vectorToWorldFrame(rel_pos, rel_pos);
-        chassisBody.applyImpulse(sideImp, rel_pos); //apply friction impulse on the ground
+        chassisBody.vectorToLocalFrame(this._updateFriction_rel_pos, this._updateFriction_rel_pos);
+        this._updateFriction_rel_pos['xyz'[this.indexUpAxis]] *= wheel.rollInfluence;
+        chassisBody.vectorToWorldFrame(this._updateFriction_rel_pos, this._updateFriction_rel_pos);
+        chassisBody.applyImpulse(sideImp, this._updateFriction_rel_pos); //apply friction impulse on the ground
 
         sideImp.scale(-1, sideImp);
         groundObject.applyImpulse(sideImp, rel_pos2);
