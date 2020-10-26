@@ -6840,9 +6840,15 @@ class RaycastVehicle {
     }
 
     this.currentVehicleSpeedKmHour = 3.6 * chassisBody.velocity.length(); // const forwardWorld = new Vec3() // reuse Vec3
+<<<<<<< HEAD
 
     this.getVehicleAxisWorld(this.indexForwardAxis, this._forwardWorld);
 
+=======
+
+    this.getVehicleAxisWorld(this.indexForwardAxis, this._forwardWorld);
+
+>>>>>>> cbd84d52141d8910b5b5ec18a5233e19eb45042b
     if (this._forwardWorld.dot(chassisBody.velocity) < 0) {
       this.currentVehicleSpeedKmHour *= -1;
     } // simulate suspension
